@@ -1,0 +1,8 @@
+**/__pycache__
+instance/
+.venv/
+dist/
+
+.env
+
+*.json

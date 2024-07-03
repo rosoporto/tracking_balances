@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "optima-tg-stock"
+version = "0.1.0"
+description = ""
+authors = ["rosoporto <rosoporto@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+bs4 = "^0.0.2"
+requests = "^2.32.3"
+lxml = "^5.2.2"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.scripts]
+load = "optima_tg_stock.run:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
