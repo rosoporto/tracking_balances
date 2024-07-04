@@ -1,27 +1,16 @@
 from .config.settings import Settings
-from .config.load_json import load_data
-from .modules.content_processing import WebContentLoader, WebContentParser
+from .modules.DataModule import DataModule
+from .modules.WebContentParser import WebContentLoader, WebContentParser
 
 
 def main():
     settings = Settings()
-    data_file_path = settings.data_file_path
-
-    data = load_data(data_file_path)
-    products = data["products"]
-
     loader = WebContentLoader()
-    for product, url in products.items():
-        content = loader.load_content(url)
-        if content:
-            parser = WebContentParser(content)
-            data = parser.get_stock()
-            if data:
-                print(data)
-            else:
-                print("Не удалось получить контент страницы.")
-        else:
-            print("Не удалось получить контент страницы.")
+    parser = WebContentParser(loader)
+
+    data_module = DataModule(settings, parser)
+    result = data_module.get_data()
+    print(result)
 
 
 if __name__ == "__main__":
