@@ -29,9 +29,9 @@ class DataModule:
                 stock_product = f'Для {product} не удалось получить остатки.'
 
             if stock and self.check_stock():
-                stock_product = f'ВНИМАНИЕ! {product}: осталось {stock} штук'
+                stock_product = f'ВНИМАНИЕ! {product}: осталось *{stock}* штук'
             else:
-                stock_product = f'{product}: осталось {stock} штук'
+                stock_product = f'{product}: *{stock}* штук'
             result.append(stock_product)
 
         return '\n'.join(result)

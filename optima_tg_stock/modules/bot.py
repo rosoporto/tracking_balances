@@ -7,8 +7,8 @@ from ..config.settings import Settings
 from .WebContentParser import WebContentParser
 from .WebContentLoader import WebContentLoader
 from .DataModule import DataModule
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 logging.basicConfig(
@@ -25,6 +25,8 @@ class TelegramBot:
         self.updater = Updater(token, use_context=True)
         self.dp = self.updater.dispatcher
         self.data_module = data_module
+        self.sent_messages = {}
+        self.max_sent_messages = 10
 
         self.dp.add_handler(CommandHandler('start', self.start))
         self.dp.add_handler(CommandHandler('stop', self.stop))
@@ -34,21 +36,18 @@ class TelegramBot:
         if update.effective_user.id in self.allowed_users:
             user = self.get_username(update.effective_user.id, context)
             logger.info("Бот для юзера @%s запущен", user)
-            
+
             self.auth_user = True
             keyboard = [[InlineKeyboardButton('Stop', callback_data='Stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            #update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
-            query = update.callback_query
-            query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
-
-            # Отправлять сообщения каждый день в 10:00 по московскому времени
-            # schedule.every().day.at("10:00").do(self.job, context)
-            schedule.every(1).minutes.do(self.job, context)  # запуск функции каждые 3 минуты
+            if update.callback_query:
+                update.callback_query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
+            else:
+                update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
+            schedule.every().day.at("10:00").do(self.job, context)            
         else:
             logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
-            #update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
-            query.edit_message_text('У вас нет доступа к этому боту.')
+            update.message.reply_text('У вас нет доступа к этому боту.', quote=True)            
 
     def stop(self, update, context):
         if update.effective_user.id in self.allowed_users:
@@ -77,7 +76,7 @@ class TelegramBot:
         user = context.bot.get_chat_member(chat_id=user_id, user_id=user_id).user
         username = user.username if user.username else f"{user_id}"
         return username
-              
+
     def send_messages(self, context):
         if self.auth_user:
             logger.info("Процесс сбора данных начался")
@@ -96,10 +95,9 @@ class TelegramBot:
                 )
 
     def job(self, context):
-        # now = datetime.now(pytz.timezone('Europe/Moscow'))
-        # if now.weekday() not in [5, 6]:  # 5 - Saturday, 6 - Sunday
-        #     self.send_messages(context)
-        self.send_messages(context)
+        now = datetime.now(pytz.timezone('Europe/Moscow'))
+        if now.weekday() not in [5, 6]:  # 5 - Saturday, 6 - Sunday
+            self.send_messages(context)
 
     def run(self):
         self.updater.start_polling()
