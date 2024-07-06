@@ -21,7 +21,7 @@ class TelegramBot:
     def __init__(self, token, allowed_users, data_module):
         self.token = token
         self.allowed_users = allowed_users
-        self.send_messages = False
+        self.auth_user = False
         self.updater = Updater(token, use_context=True)
         self.dp = self.updater.dispatcher
         self.data_module = data_module
@@ -32,24 +32,39 @@ class TelegramBot:
 
     def start(self, update, context):
         if update.effective_user.id in self.allowed_users:
-            self.send_messages = True
-            keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
+            user = self.get_username(update.effective_user.id, context)
+            logger.info("Бот для юзера @%s запущен", user)
+            
+            self.auth_user = True
+            keyboard = [[InlineKeyboardButton('Stop', callback_data='Stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text('Бот запущен!', reply_markup=reply_markup)
+            #update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
+            query = update.callback_query
+            query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
 
             # Отправлять сообщения каждый день в 10:00 по московскому времени
-            schedule.every().day.at("10:00").do(self.job, context)
+            # schedule.every().day.at("10:00").do(self.job, context)
+            schedule.every(1).minutes.do(self.job, context)  # запуск функции каждые 3 минуты
         else:
-            update.message.reply_text('У вас нет доступа к этому боту.')
+            logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
+            #update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
+            query.edit_message_text('У вас нет доступа к этому боту.')
 
     def stop(self, update, context):
         if update.effective_user.id in self.allowed_users:
-            self.send_messages = False
+            self.auth_user = False
             keyboard = [[InlineKeyboardButton('Start', callback_data='start')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text('Бот остановлен!', reply_markup=reply_markup)
+            update.callback_query.edit_message_text(
+                'Бот остановлен!',
+                reply_markup=reply_markup
+            )
+            user = self.get_username(update.effective_user.id, context)
+            logger.info("Бот для юзера @%s остановлен", user)
         else:
-            update.message.reply_text('У вас нет доступа к этому боту.')
+            update.callback_query.edit_message_text(
+                'У вас нет доступа к этому боту.'
+            )
 
     def button(self, update, context):
         query = update.callback_query
@@ -58,24 +73,40 @@ class TelegramBot:
         elif query.data == 'stop':
             self.stop(update, context)
 
+    def get_username(self, user_id, context):
+        user = context.bot.get_chat_member(chat_id=user_id, user_id=user_id).user
+        username = user.username if user.username else f"{user_id}"
+        return username
+              
     def send_messages(self, context):
-        if self.send_messages:
+        if self.auth_user:
+            logger.info("Процесс сбора данных начался")
             result = self.data_module.process_data()
             for user_id in self.allowed_users:
                 context.bot.send_message(chat_id=user_id, text=result)
+            logger.info("Остатки доставлены")
+            # Добавить кнопку "Стоп"
+            keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            for user_id in self.allowed_users:
+                context.bot.send_message(
+                    chat_id=user_id,
+                    text="Остатки переданы!",
+                    reply_markup=reply_markup
+                )
 
     def job(self, context):
-        now = datetime.now(pytz.timezone('Europe/Moscow'))
-        if now.weekday() not in [5, 6]:  # 5 - Saturday, 6 - Sunday
-            self.send_messages(context)
+        # now = datetime.now(pytz.timezone('Europe/Moscow'))
+        # if now.weekday() not in [5, 6]:  # 5 - Saturday, 6 - Sunday
+        #     self.send_messages(context)
+        self.send_messages(context)
 
     def run(self):
+        self.updater.start_polling()
         while True:
             schedule.run_pending()
             time.sleep(1)
-
-            self.updater.start_polling()
-            self.updater.idle()
+        self.updater.idle()
 
 
 if __name__ == '__main__':
