@@ -10,7 +10,7 @@ def main():
     parser = WebContentParser(loader)
 
     telegram_token = settings.telegram_token
-    telegram_user_id = int(settings.telegram_user_id)    
+    telegram_user_id = int(settings.telegram_user_id)
 
     data_module = DataModule(settings, parser)
     bot = TelegramBot(telegram_token, [telegram_user_id], data_module)

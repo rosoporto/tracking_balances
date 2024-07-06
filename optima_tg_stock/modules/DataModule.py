@@ -8,7 +8,7 @@ from .WebContentLoader import WebContentLoader
 class DataModule:
     def __init__(self, settings, parser):
         self.settings = settings
-        self.parser = parser        
+        self.parser = parser
 
     def process_data(self):
         data_file_path = self.settings.data_file_path
