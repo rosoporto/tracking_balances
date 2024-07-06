@@ -25,8 +25,6 @@ class TelegramBot:
         self.updater = Updater(token, use_context=True)
         self.dp = self.updater.dispatcher
         self.data_module = data_module
-        self.sent_messages = {}
-        self.max_sent_messages = 10
 
         self.dp.add_handler(CommandHandler('start', self.start))
         self.dp.add_handler(CommandHandler('stop', self.stop))
@@ -44,10 +42,11 @@ class TelegramBot:
                 update.callback_query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
             else:
                 update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
-            schedule.every().day.at("10:00").do(self.job, context)            
+            time_to_sent = self.data_module.settings.run_time
+            schedule.every().day.at(time_to_sent).do(self.job, context)
         else:
             logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
-            update.message.reply_text('У вас нет доступа к этому боту.', quote=True)            
+            update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
 
     def stop(self, update, context):
         if update.effective_user.id in self.allowed_users:
@@ -96,7 +95,12 @@ class TelegramBot:
 
     def job(self, context):
         now = datetime.now(pytz.timezone('Europe/Moscow'))
-        if now.weekday() not in [5, 6]:  # 5 - Saturday, 6 - Sunday
+        days_off = self.data_module.settings.run_time
+        if days_off:
+            days_off = [int(day) for day in days_off.split(',')]
+        else:
+            days_off = []
+        if now.weekday() not in days_off:
             self.send_messages(context)
 
     def run(self):

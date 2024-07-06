@@ -6,10 +6,9 @@ from .WebContentLoader import WebContentLoader
 
 
 class DataModule:
-    def __init__(self, settings, parser, stock_limit=0):
+    def __init__(self, settings, parser):
         self.settings = settings
-        self.parser = parser
-        self.stock_limit = stock_limit
+        self.parser = parser        
 
     def process_data(self):
         data_file_path = self.settings.data_file_path
@@ -29,15 +28,15 @@ class DataModule:
                 stock_product = f'Для {product} не удалось получить остатки.'
 
             if stock and self.check_stock():
-                stock_product = f'ВНИМАНИЕ! {product}: осталось *{stock}* штук'
+                stock_product = f'ВНИМАНИЕ! {product}: осталось *{stock}* шт.'
             else:
-                stock_product = f'{product}: *{stock}* штук'
+                stock_product = f'{product}: {stock} шт.'
             result.append(stock_product)
 
         return '\n'.join(result)
 
     def check_stock(self):
-        return True if self.stock_limit > 0 else False
+        return True if self.settings.min_stock_quantity > 0 else False
 
     def load_data(self, data_file_path):
         if not os.path.exists(data_file_path):
