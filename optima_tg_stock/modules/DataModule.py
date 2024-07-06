@@ -1,3 +1,4 @@
+import os
 import json
 from ..config.settings import Settings
 from .WebContentParser import WebContentParser
@@ -5,13 +6,18 @@ from .WebContentLoader import WebContentLoader
 
 
 class DataModule:
-    def __init__(self, settings, parser):
+    def __init__(self, settings, parser, stock_limit=0):
         self.settings = settings
         self.parser = parser
+        self.stock_limit = stock_limit
 
-    def get_data(self):
+    def process_data(self):
         data_file_path = self.settings.data_file_path
-        data = self.load_data(data_file_path)
+        try:
+            data = self.load_data(data_file_path)
+        except FileNotFoundError as e:
+            return f"Ошибка: файл '{data_file_path}' не найден: {e}."
+
         products = data["products"]
         result = []
         for product, url in products.items():
@@ -19,15 +25,24 @@ class DataModule:
             stock = self.parser.get_stock()
 
             stock_product = ''
-            if stock:
-                stock_product = f'{product}: осталось {stock} штук'
-            else:
+            if stock is None:
                 stock_product = f'Для {product} не удалось получить остатки.'
+
+            if stock and self.check_stock():
+                stock_product = f'ВНИМАНИЕ! {product}: осталось {stock} штук'
+            else:
+                stock_product = f'{product}: осталось {stock} штук'
             result.append(stock_product)
 
         return '\n'.join(result)
 
+    def check_stock(self):
+        return True if self.stock_limit > 0 else False
+
     def load_data(self, data_file_path):
+        if not os.path.exists(data_file_path):
+            raise FileNotFoundError(f"File '{data_file_path}' not found.")
+
         with open(data_file_path, "r") as file:
             data = json.load(file)
         return data
