@@ -1,42 +1,34 @@
 import os
 import json
-from ..config.settings import Settings
+from .custom_logging import Logger
 from .WebContentParser import WebContentParser
 from .WebContentLoader import WebContentLoader
+from ..config.settings import Settings
 
 
 class DataModule:
-    def __init__(self, settings, data_max):
-        self.settings = settings
-        self.data_max = data_max
+    def __init__(self, data_file_path, min_stock_quantity, logger):
+        self.data_file_path: str = data_file_path
+        self.min_stock_quantity: int = min_stock_quantity
+        self.logger: Logger = logger
+        self.content_loader = WebContentLoader(self.logger)
 
     def process_data(self):
-        data_file_path = self.settings.data_file_path
         try:
-            data = self.load_data(data_file_path)
+            data = self.load_data(self.data_file_path)
         except FileNotFoundError as e:
-            return f"Ошибка: файл '{data_file_path}' не найден: {e}."
+            self.logger.error(f"Ошибка: файл '{self.data_file_path}' не найден: {e}")
+            return f"Ошибка: файл '{self.data_file_path}' не найден: {e}."
 
         products = data["products"]
-        result = []
+        result = {}
+        parser = WebContentParser(self.content_loader, self.logger)
         for product, url in products.items():
-            self.parser.load_and_parse_content(url)
-            stock = self.parser.get_stock()
+            parser.load_and_parse_content(url)
+            stock = parser.get_stock()
+            result[product] = stock
 
-            stock_product = ''
-            if stock is None:
-                stock_product = f'Для {product} не удалось получить остатки.'
-
-            if stock and self.check_stock():
-                stock_product = f'ВНИМАНИЕ! {product}: осталось *{stock}* шт.'
-            else:
-                stock_product = f'{product}: {stock} шт.'
-            result.append(stock_product)
-
-        return '\n'.join(result)
-
-    def check_stock(self):
-        return True if self.settings.min_stock_quantity > 0 else False
+        return result
 
     def load_data(self, data_file_path):
         if not os.path.exists(data_file_path):
@@ -49,9 +41,12 @@ class DataModule:
 
 if __name__ == '__main__':
     settings = Settings()
-    loader = WebContentLoader()
-    data_max = WebContentParser(loader)
+    logger = Logger(settings.path_to_log)
 
-    data_module = DataModule(settings, data_max)
-    result = data_module.get_data()
+    data_module = DataModule(        
+        settings.data_file_path,
+        settings.min_stock_quantity,
+        logger
+    )
+    result = data_module.process_data()
     print(result)

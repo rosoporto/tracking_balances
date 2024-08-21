@@ -28,16 +28,19 @@ class WebContentParser:
                 data_max = self.soup.find('span', {'class': 'plus'})['data-max']
                 return data_max
             else:
-                return '-'
+                return 0
         except Exception as e:
             self.logger.error(f"Error extracting data-max: {e}")
-            return '-'
+            raise ValueError("Ошибка при извлечении данных")
+        finally:
+            self.content = None
+            self.soup = None
 
 
 if __name__ == "__main__":
     settings = Settings()
     logger = Logger(settings.path_to_log)
-    content_loader = WebContentLoader(logger)    
+    content_loader = WebContentLoader(logger)
     parser = WebContentParser(content_loader, logger)
 
     products = load_products_from_json(settings.data_file_path)
