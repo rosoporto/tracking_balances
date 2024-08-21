@@ -6,9 +6,9 @@ from .WebContentLoader import WebContentLoader
 
 
 class DataModule:
-    def __init__(self, settings, parser):
+    def __init__(self, settings, data_max):
         self.settings = settings
-        self.parser = parser
+        self.data_max = data_max
 
     def process_data(self):
         data_file_path = self.settings.data_file_path
@@ -50,8 +50,8 @@ class DataModule:
 if __name__ == '__main__':
     settings = Settings()
     loader = WebContentLoader()
-    parser = WebContentParser(loader)
+    data_max = WebContentParser(loader)
 
-    data_module = DataModule(settings, parser)
+    data_module = DataModule(settings, data_max)
     result = data_module.get_data()
     print(result)

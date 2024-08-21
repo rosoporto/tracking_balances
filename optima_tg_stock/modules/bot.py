@@ -1,14 +1,14 @@
-import schedule
 import time
-import pytz
 import datetime
 import logging
+import schedule
+import pytz
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from ..config.settings import Settings
 from .WebContentParser import WebContentParser
 from .WebContentLoader import WebContentLoader
 from .DataModule import DataModule
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 logging.basicConfig(
@@ -94,7 +94,7 @@ class TelegramBot:
                 )
 
     def job(self, context):
-        now = datetime.now(pytz.timezone('Europe/Moscow'))
+        now = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
         days_off = self.data_module.settings.run_time
         if days_off:
             days_off = [int(day) for day in days_off.split(',')]

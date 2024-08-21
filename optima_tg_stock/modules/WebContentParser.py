@@ -1,12 +1,16 @@
 from bs4 import BeautifulSoup
 from .WebContentLoader import WebContentLoader
+from .load_json import load_products_from_json
+from .custom_logging import Logger
+from ..config.settings import Settings
 
 
 class WebContentParser:
-    def __init__(self, content_loader):
+    def __init__(self, content_loader, logger):
         self.content_loader = content_loader
         self.content = None
         self.soup = None
+        self.logger = logger
 
     def load_and_parse_content(self, url):
         self.content = self.content_loader.load_content(url)
@@ -24,17 +28,20 @@ class WebContentParser:
                 data_max = self.soup.find('span', {'class': 'plus'})['data-max']
                 return data_max
             else:
-                return None
+                return '-'
         except Exception as e:
-            print(f"Error extracting data-max: {e}")
-            return None
+            self.logger.error(f"Error extracting data-max: {e}")
+            return '-'
 
 
 if __name__ == "__main__":
-    urls = ['https://example.com', 'https://example.org']
-    loader = WebContentLoader()
-    parser = WebContentParser(loader)
+    settings = Settings()
+    logger = Logger(settings.path_to_log)
+    content_loader = WebContentLoader(logger)    
+    parser = WebContentParser(content_loader, logger)
 
-    for url in urls:
+    products = load_products_from_json(settings.data_file_path)
+
+    for product_name, url in products.items():
         parser.load_and_parse_content(url)
-        stock = parser.get_stock()
+        print(parser.get_stock())
