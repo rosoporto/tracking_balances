@@ -3,29 +3,24 @@ import pytz
 import datetime
 import schedule
 from .custom_logging import Logger
-from .DataModule import DataModule
 from .ContentManager import ContentManager
 from ..config.settings import Settings
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from typing import List
 
 
 class TelegramBot:
-    def __init__(
-            self,
-            token: str,
-            allowed_users: List,
-            data_file_path,
-            min_stock_quantity,
-            logger
-    ):
-        self.token = token
-        self.allowed_users = allowed_users
-        self.auth_user = False
+    def __init__(self, settings, logger):
+        self.settings = settings
+        self.allowed_users = list(map(int, self.settings.telegram_user_id.split(",")))
         self.logger = logger
-        self.content_manager = ContentManager(data_file_path, min_stock_quantity, self.logger),
-        self.updater = Updater(token, use_context=True)
+        self.content_manager = ContentManager(
+            self.settings.data_file_path,
+            self.settings.min_stock_quantity,
+            self.logger
+        )
+        self.auth_user = False
+        self.updater = Updater(self.settings.telegram_token, use_context=True)
         self.dp = self.updater.dispatcher
 
         self.dp.add_handler(CommandHandler('start', self.start))
@@ -38,13 +33,13 @@ class TelegramBot:
             self.logger.info("Бот для юзера @%s запущен", user)
 
             self.auth_user = True
-            keyboard = [[InlineKeyboardButton('Stop', callback_data='Stop')]]
+            keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if update.callback_query:
                 update.callback_query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
             else:
                 update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
-            time_to_sent = self.data_module.settings.run_time
+            time_to_sent = self.settings.run_time
             schedule.every().day.at(time_to_sent).do(self.job, context)
         else:
             self.logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
@@ -55,16 +50,15 @@ class TelegramBot:
             self.auth_user = False
             keyboard = [[InlineKeyboardButton('Start', callback_data='start')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.callback_query.edit_message_text(
-                'Бот остановлен!',
-                reply_markup=reply_markup
-            )
+            if update.callback_query:
+                update.callback_query.edit_message_text('Бот остановлен!', reply_markup=reply_markup)
+            else:
+                update.message.reply_text('Бот остановлен!', reply_markup=reply_markup)
             user = self.get_username(update.effective_user.id, context)
             self.logger.info("Бот для юзера @%s остановлен", user)
         else:
-            update.callback_query.edit_message_text(
-                'У вас нет доступа к этому боту.'
-            )
+            if update.callback_query:
+                update.callback_query.edit_message_text('У вас нет доступа к этому боту.')
 
     def button(self, update, context):
         query = update.callback_query
@@ -74,30 +68,40 @@ class TelegramBot:
             self.stop(update, context)
 
     def get_username(self, user_id, context):
-        user = context.bot.get_chat_member(chat_id=user_id, user_id=user_id).user
-        username = user.username if user.username else f"{user_id}"
-        return username
+        try:
+            user = context.bot.get_chat_member(chat_id=user_id, user_id=user_id).user
+            username = user.username if user.username else f"{user_id}"
+            return username
+        except Exception as e:
+            self.logger.error("Ошибка получения имени пользователя: %s", e)
+            return str(user_id)
 
     def send_messages(self, context):
         if self.auth_user:
             self.logger.info("Процесс сбора данных начался")
-            result = self.data_module.process_data()
+            message = self.content_manager.create_answer()
             for user_id in self.allowed_users:
-                context.bot.send_message(chat_id=user_id, text=result)
+                try:
+                    context.bot.send_message(chat_id=user_id, text=message)
+                except Exception as e:
+                    self.logger.error("Ошибка отправки сообщения пользователю %s: %s", user_id, e)
+
             self.logger.info("Остатки доставлены")
-            # Добавить кнопку "Стоп"
             keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             for user_id in self.allowed_users:
-                context.bot.send_message(
-                    chat_id=user_id,
-                    text="Остатки переданы!",
-                    reply_markup=reply_markup
-                )
+                try:
+                    context.bot.send_message(
+                        chat_id=user_id,
+                        text="Остатки переданы!",
+                        reply_markup=reply_markup
+                    )
+                except Exception as e:
+                    self.logger.error("Ошибка отправки сообщения пользователю %s: %s", user_id, e)
 
     def job(self, context):
         now = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
-        days_off = self.data_module.settings.run_time
+        days_off = self.settings.days_off
         if days_off:
             days_off = [int(day) for day in days_off.split(',')]
         else:
@@ -115,15 +119,9 @@ class TelegramBot:
 
 if __name__ == '__main__':
     settings = Settings()
-    telegram_token = settings.telegram_token
-    telegram_user_id = settings.telegram_user_id
-
-    data_module = DataModule(settings)
-    loger = Logger()
-
-    bot = TelegramBot(telegram_token, [telegram_user_id], data_module)
+    logger = Logger(settings.path_to_log)  # Передаем путь к логам
+    bot = TelegramBot(settings, logger)
     bot.run()
-
 
 # TODO:
 # schedule.every(3).minutes.do(job)  # запуск функции каждые 3 минуты

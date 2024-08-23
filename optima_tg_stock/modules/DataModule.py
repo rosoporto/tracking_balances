@@ -8,7 +8,7 @@ from ..config.settings import Settings
 
 class DataModule:
     def __init__(self, data_file_path, logger):
-        self.data_file_path: str = data_file_path        
+        self.data_file_path: str = data_file_path
         self.logger: Logger = logger
         self.content_loader = WebContentLoader(self.logger)
 

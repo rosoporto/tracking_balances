@@ -5,7 +5,7 @@ from ..config.settings import Settings
 
 class ContentManager:
     def __init__(self, data_file_path, min_stock_quantity, logger):
-        self.data_module = DataModule(data_file_path, logger)        
+        self.data_module = DataModule(data_file_path, logger)
         self.min_stock_quantity = min_stock_quantity
         self.logger = logger
         
