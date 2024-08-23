@@ -1,30 +1,32 @@
 import time
-import datetime
-import logging
-import schedule
 import pytz
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from ..config.settings import Settings
-from .WebContentParser import WebContentParser
-from .WebContentLoader import WebContentLoader
+import datetime
+import schedule
+from .custom_logging import Logger
 from .DataModule import DataModule
-
-
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+from .ContentManager import ContentManager
+from ..config.settings import Settings
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from typing import List
 
 
 class TelegramBot:
-    def __init__(self, token, allowed_users, data_module):
+    def __init__(
+            self,
+            token: str,
+            allowed_users: List,
+            data_file_path,
+            min_stock_quantity,
+            logger
+    ):
         self.token = token
         self.allowed_users = allowed_users
         self.auth_user = False
+        self.logger = logger
+        self.content_manager = ContentManager(data_file_path, min_stock_quantity, self.logger),
         self.updater = Updater(token, use_context=True)
         self.dp = self.updater.dispatcher
-        self.data_module = data_module
 
         self.dp.add_handler(CommandHandler('start', self.start))
         self.dp.add_handler(CommandHandler('stop', self.stop))
@@ -33,7 +35,7 @@ class TelegramBot:
     def start(self, update, context):
         if update.effective_user.id in self.allowed_users:
             user = self.get_username(update.effective_user.id, context)
-            logger.info("Бот для юзера @%s запущен", user)
+            self.logger.info("Бот для юзера @%s запущен", user)
 
             self.auth_user = True
             keyboard = [[InlineKeyboardButton('Stop', callback_data='Stop')]]
@@ -45,7 +47,7 @@ class TelegramBot:
             time_to_sent = self.data_module.settings.run_time
             schedule.every().day.at(time_to_sent).do(self.job, context)
         else:
-            logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
+            self.logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
             update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
 
     def stop(self, update, context):
@@ -58,7 +60,7 @@ class TelegramBot:
                 reply_markup=reply_markup
             )
             user = self.get_username(update.effective_user.id, context)
-            logger.info("Бот для юзера @%s остановлен", user)
+            self.logger.info("Бот для юзера @%s остановлен", user)
         else:
             update.callback_query.edit_message_text(
                 'У вас нет доступа к этому боту.'
@@ -78,11 +80,11 @@ class TelegramBot:
 
     def send_messages(self, context):
         if self.auth_user:
-            logger.info("Процесс сбора данных начался")
+            self.logger.info("Процесс сбора данных начался")
             result = self.data_module.process_data()
             for user_id in self.allowed_users:
                 context.bot.send_message(chat_id=user_id, text=result)
-            logger.info("Остатки доставлены")
+            self.logger.info("Остатки доставлены")
             # Добавить кнопку "Стоп"
             keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -116,10 +118,8 @@ if __name__ == '__main__':
     telegram_token = settings.telegram_token
     telegram_user_id = settings.telegram_user_id
 
-    loader = WebContentLoader()
-    parser = WebContentParser(loader)
-
-    data_module = DataModule(settings, parser)
+    data_module = DataModule(settings)
+    loger = Logger()
 
     bot = TelegramBot(telegram_token, [telegram_user_id], data_module)
     bot.run()

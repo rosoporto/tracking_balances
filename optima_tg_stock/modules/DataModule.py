@@ -7,9 +7,8 @@ from ..config.settings import Settings
 
 
 class DataModule:
-    def __init__(self, data_file_path, min_stock_quantity, logger):
-        self.data_file_path: str = data_file_path
-        self.min_stock_quantity: int = min_stock_quantity
+    def __init__(self, data_file_path, logger):
+        self.data_file_path: str = data_file_path        
         self.logger: Logger = logger
         self.content_loader = WebContentLoader(self.logger)
 
@@ -43,9 +42,8 @@ if __name__ == '__main__':
     settings = Settings()
     logger = Logger(settings.path_to_log)
 
-    data_module = DataModule(        
+    data_module = DataModule(
         settings.data_file_path,
-        settings.min_stock_quantity,
         logger
     )
     result = data_module.process_data()
