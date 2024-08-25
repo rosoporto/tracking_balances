@@ -8,11 +8,11 @@ class ContentManager:
         self.data_module = DataModule(data_file_path, logger)
         self.min_stock_quantity = min_stock_quantity
         self.logger = logger
-        
+
     def get_data(self):
         return self.data_module.process_data()
 
-    def create_answer(self):
+    def create_answer(self, flag='alert'):
         massages = self.get_data()
         if not massages:
             self.logger.error("Данные отсутствуют")
@@ -26,10 +26,13 @@ class ContentManager:
                     stock_product = f'{product} закончился'
                 elif self.check_stock(self.min_stock_quantity, stock):
                     stock_product = f'\033[31mВНИМАНИЕ!\033[0m {product}: осталось *{stock}* шт.'
-                else:
+                elif flag != 'alert':
                     stock_product = f'{product}: {stock} шт.'
                 result.append(stock_product)
-        return '\n'.join(result)
+            if any(result):
+                return '\n'.join(result)
+            else:
+                return None
 
     def check_stock(self, min_stock_quantity, stock):
         if stock:

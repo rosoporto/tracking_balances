@@ -30,7 +30,7 @@ class TelegramBot:
     def start(self, update, context):
         if update.effective_user.id in self.allowed_users:
             user = self.get_username(update.effective_user.id, context)
-            self.logger.info("Бот для юзера @%s запущен", user)
+            self.logger.info(f"Бот для юзера @{user} запущен")
 
             self.auth_user = True
             keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
@@ -42,7 +42,7 @@ class TelegramBot:
             time_to_sent = self.settings.run_time
             schedule.every().day.at(time_to_sent).do(self.job, context)
         else:
-            self.logger.info("Неавторизованный пользователь : %s", update.effective_user.id)
+            self.logger.info(f"Неавторизованный пользователь: {update.effective_user.id}")
             update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
 
     def stop(self, update, context):
@@ -55,7 +55,7 @@ class TelegramBot:
             else:
                 update.message.reply_text('Бот остановлен!', reply_markup=reply_markup)
             user = self.get_username(update.effective_user.id, context)
-            self.logger.info("Бот для юзера @%s остановлен", user)
+            self.logger.info(f"Бот для юзера @{user} остановлен")
         else:
             if update.callback_query:
                 update.callback_query.edit_message_text('У вас нет доступа к этому боту.')
@@ -73,18 +73,28 @@ class TelegramBot:
             username = user.username if user.username else f"{user_id}"
             return username
         except Exception as e:
-            self.logger.error("Ошибка получения имени пользователя: %s", e)
+            self.logger.error(f"Ошибка получения имени пользователя: {e}")
             return str(user_id)
 
     def send_messages(self, context):
         if self.auth_user:
             self.logger.info("Процесс сбора данных начался")
-            message = self.content_manager.create_answer()
+            message = self.content_manager.create_answer()            
+            
+            if message is None:
+                # Если товаров достаточно, отправляем сообщение пользователю
+                for user_id in self.allowed_users:
+                    try:
+                        context.bot.send_message(chat_id=user_id, text="Товары в достаточном количестве.")
+                    except Exception as e:
+                        self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")                    
+                return  # Выходим из метода, так как нет необходимости отправлять остатки            
+            
             for user_id in self.allowed_users:
                 try:
                     context.bot.send_message(chat_id=user_id, text=message)
                 except Exception as e:
-                    self.logger.error("Ошибка отправки сообщения пользователю %s: %s", user_id, e)
+                    self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")
 
             self.logger.info("Остатки доставлены")
             keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
