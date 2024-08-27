@@ -7,7 +7,7 @@
 
 ## Установка
 ```
-git clone https://github.com/rosoporto/python-project-49.git
+git clone https://github.com/rosoporto/tracking_balances.git
 cd python-project-49
 make package-install
 ```
