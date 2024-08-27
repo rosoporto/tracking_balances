@@ -79,17 +79,17 @@ class TelegramBot:
     def send_messages(self, context):
         if self.auth_user:
             self.logger.info("Процесс сбора данных начался")
-            message = self.content_manager.create_answer()            
-            
+            message = self.content_manager.create_answer()
+
             if message is None:
                 # Если товаров достаточно, отправляем сообщение пользователю
                 for user_id in self.allowed_users:
                     try:
                         context.bot.send_message(chat_id=user_id, text="Товары в достаточном количестве.")
                     except Exception as e:
-                        self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")                    
-                return  # Выходим из метода, так как нет необходимости отправлять остатки            
-            
+                        self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")
+                return  # Выходим из метода, так как нет необходимости отправлять остатки
+
             for user_id in self.allowed_users:
                 try:
                     context.bot.send_message(chat_id=user_id, text=message)

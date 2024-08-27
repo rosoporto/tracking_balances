@@ -5,7 +5,7 @@ load:
 	poetry run load
 
 lint:
-	poetry run flake8 brain_games
+	poetry run flake8 optima_tg_stock
 
 build:
 	poetry build
