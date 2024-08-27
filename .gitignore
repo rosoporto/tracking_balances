@@ -7,3 +7,4 @@ dist/
 
 *.json
 *.log
+!log/
