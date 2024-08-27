@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 
 class Logger:
-    def __init__(self, filename_to_log):
+    def __init__(self, filename_to_log, log_level=logging.DEBUG):
         # Проверка на существование файла и его создание, если он отсутствует
         if not os.path.exists(filename_to_log):
             open(filename_to_log, 'w').close()  # Создаем пустой файл
@@ -21,7 +21,7 @@ class Logger:
 
         # Настройка логирования
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(log_level)  # Установка уровня логирования
         self.logger.addHandler(handler)
 
     def debug(self, message):
@@ -42,7 +42,7 @@ class Logger:
 
 if __name__ == '__main__':
     settings = Settings()
-    log = Logger(settings.path_to_log)
+    log = Logger(settings.path_to_log, log_level=logging.INFO)
     log.debug('Это отладочное сообщение.')
     log.info('Это информационное сообщение.')
     log.warning('Это предупреждающее сообщение.')

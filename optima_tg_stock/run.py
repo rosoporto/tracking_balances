@@ -1,3 +1,4 @@
+import logging
 from .config.settings import Settings
 from .modules.custom_logging import Logger
 from .modules.bot import TelegramBot
@@ -5,7 +6,12 @@ from .modules.bot import TelegramBot
 
 def main():
     settings = Settings()
-    logger = Logger(settings.path_to_log)  # Передаем путь к логам
+
+    logger = Logger(
+        settings.path_to_log,
+        log_level=logging.WARNING
+    )
+
     bot = TelegramBot(settings, logger)
     bot.run()
 
