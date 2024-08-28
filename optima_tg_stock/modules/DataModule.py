@@ -15,9 +15,9 @@ class DataModule:
     def process_data(self):
         try:
             data = self.load_data(self.data_file_path)
-        except FileNotFoundError as e:
-            self.logger.error(f"Ошибка: файл '{self.data_file_path}' не найден: {e}")
-            return f"Ошибка: файл '{self.data_file_path}' не найден: {e}."
+        except FileNotFoundError as error_answer:
+            self.logger.error(error_answer)
+            return None
 
         products = data["products"]
         result = {}
@@ -31,7 +31,7 @@ class DataModule:
 
     def load_data(self, data_file_path):
         if not os.path.exists(data_file_path):
-            raise FileNotFoundError(f"File '{data_file_path}' not found.")
+            raise FileNotFoundError(f"Файл '{data_file_path}' не найден.")
 
         with open(data_file_path, "r") as file:
             data = json.load(file)
