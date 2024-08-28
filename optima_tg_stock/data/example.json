@@ -1,0 +1,8 @@
+{
+    "products": {
+      "Название товара #1": "https://example-site/category/goods-1",
+      "Название товара #2": "https://example-site/category/goods-2",
+      "Название товара #3": "https://example-site/category/goods-3",
+      "Название товара #4": "https://example-site/category/goods-4"
+    }
+}
