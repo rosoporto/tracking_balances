@@ -17,7 +17,7 @@ class ContentManager:
         if not massages:
             self.logger.error("Данные отсутствуют")
             raise ValueError("Значение не может быть пустым")
-        else:            
+        else:
             massages = {key: int(value) for key, value in massages.items()}
             result = []
             for product, stock in massages.items():
