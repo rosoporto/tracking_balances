@@ -20,6 +20,7 @@ class TelegramBot:
             self.logger
         )
         self.auth_user = False
+        self.start_message_id = None
         self.updater = Updater(self.settings.telegram_token, use_context=True)
         self.dp = self.updater.dispatcher
 
@@ -38,12 +39,31 @@ class TelegramBot:
             if update.callback_query:
                 update.callback_query.edit_message_text('Бот запущен!', reply_markup=reply_markup)
             else:
-                update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
+                # Сохраняем идентификатор стартового сообщения
+                start_message = update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
+                self.start_message_id = start_message.message_id  # Сохраняем идентификатор
+
             time_to_sent = self.settings.run_time
             schedule.every().day.at(time_to_sent).do(self.job, context)
+
+            # Удаляем кнопки через некоторое время
+            context.job_queue.run_once(self.remove_buttons, 86400, context=update.effective_chat.id)
+
         else:
             self.logger.info(f"Неавторизованный пользователь: {update.effective_user.id}")
             update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
+
+    def remove_buttons(self, context):
+        chat_id = context.job.context
+        if self.start_message_id:
+            try:
+                context.bot.edit_message_reply_markup(
+                    chat_id=chat_id,
+                    message_id=self.start_message_id,
+                    reply_markup=None
+                )
+            except Exception as e:
+                self.logger.error(f"Ошибка при удалении кнопок: {e}")
 
     def stop(self, update, context):
         if update.effective_user.id in self.allowed_users:
