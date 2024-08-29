@@ -88,6 +88,7 @@ class TelegramBot:
                         context.bot.send_message(chat_id=user_id, text="Товары в достаточном количестве.")
                     except Exception as e:
                         self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")
+                self.send_control_buttons(context)  # Отправляем кнопки
                 return  # Выходим из метода, так как нет необходимости отправлять остатки
 
             for user_id in self.allowed_users:
@@ -97,17 +98,27 @@ class TelegramBot:
                     self.logger.error(f"Ошибка {e} отправки сообщения пользователю {user_id}")
 
             self.logger.info("Остатки доставлены")
-            keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
+            self.send_control_buttons(context)  # Отправляем кнопки
+
+    def send_control_buttons(self, context):
+        if self.auth_user:
+            keyboard = [
+                [InlineKeyboardButton('Stop', callback_data='stop')]
+            ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            for user_id in self.allowed_users:
-                try:
-                    context.bot.send_message(
-                        chat_id=user_id,
-                        text="Остатки переданы!",
-                        reply_markup=reply_markup
-                    )
-                except Exception as e:
-                    self.logger.error("Ошибка отправки сообщения пользователю %s: %s", user_id, e)
+            message_text = "Бот работает. Выберите действие:"
+        else:
+            keyboard = [
+                [InlineKeyboardButton('Start', callback_data='start')]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            message_text = "Бот остановлен. Выберите действие:"
+
+        for user_id in self.allowed_users:
+            try:
+                context.bot.send_message(chat_id=user_id, text=message_text, reply_markup=reply_markup)
+            except Exception as e:
+                self.logger.error(f"Ошибка отправки кнопок пользователю {user_id}: {e}")
 
     def job(self, context):
         now = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
