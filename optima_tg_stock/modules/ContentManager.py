@@ -10,6 +10,10 @@ class ContentManager:
         self.logger = logger
 
     def get_data(self):
+        """
+        Returns:
+            json: Returns product details in the form product: balance
+        """
         return self.data_module.process_data()
 
     def create_answer(self, flag='alert'):
@@ -28,6 +32,8 @@ class ContentManager:
                     stock_product = f'\033[31mВНИМАНИЕ!\033[0m {product}: осталось *{stock}* шт.'
                 elif flag != 'alert':
                     stock_product = f'{product}: {stock} шт.'
+                else:
+                    continue
                 result.append(stock_product)
             if any(result):
                 return '\n'.join(result)
@@ -41,7 +47,7 @@ class ContentManager:
             return False
 
 
-if __name__ == '__main__':
+def main():
     settings = Settings()
     logger = Logger(settings.path_to_log)
 
@@ -51,3 +57,7 @@ if __name__ == '__main__':
         logger
     )
     print(content_manager.create_answer())
+
+
+if __name__ == '__main__':
+    main()

@@ -7,6 +7,9 @@ from ..config.settings import Settings
 
 
 class DataModule:
+    """
+    Returns a json file with product details in the form product: balance
+    """
     def __init__(self, data_file_path, logger):
         self.data_file_path: str = data_file_path
         self.logger: Logger = logger
@@ -38,7 +41,7 @@ class DataModule:
         return data
 
 
-if __name__ == '__main__':
+def main():
     settings = Settings()
     logger = Logger(settings.path_to_log)
 
@@ -48,3 +51,7 @@ if __name__ == '__main__':
     )
     result = data_module.process_data()
     print(result)
+
+
+if __name__ == '__main__':
+    main()

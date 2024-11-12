@@ -36,8 +36,7 @@ class WebContentParser:
             self.content = None
             self.soup = None
 
-
-if __name__ == "__main__":
+def main():
     settings = Settings()
     logger = Logger(settings.path_to_log)
     content_loader = WebContentLoader(logger)
@@ -47,4 +46,8 @@ if __name__ == "__main__":
 
     for product_name, url in products.items():
         parser.load_and_parse_content(url)
-        print(parser.get_stock())
+        print(f'{product_name}: {parser.get_stock()} шт.')
+
+
+if __name__ == "__main__":
+    main()

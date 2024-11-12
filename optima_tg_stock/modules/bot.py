@@ -126,12 +126,15 @@ class TelegramBot:
             time.sleep(1)
         self.updater.idle()
 
-
-if __name__ == '__main__':
+def main():
     settings = Settings()
     logger = Logger(settings.path_to_log)  # Передаем путь к логам
     bot = TelegramBot(settings, logger)
     bot.run()
+
+
+if __name__ == '__main__':
+    main()
 
 # TODO:
 # schedule.every(3).minutes.do(job)  # запуск функции каждые 3 минуты

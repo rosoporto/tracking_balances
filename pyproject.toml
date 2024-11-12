@@ -17,6 +17,9 @@ flake8 = "^7.1.1"
 
 [tool.poetry.scripts]
 load = "optima_tg_stock.run:main"
+parser = "optima_tg_stock.modules.WebContentParser:main"
+get-data = "optima_tg_stock.modules.DataModule:main"
+load-content = "optima_tg_stock.modules.ContentManager:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
