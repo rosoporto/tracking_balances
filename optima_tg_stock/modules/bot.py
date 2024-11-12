@@ -41,8 +41,7 @@ class TelegramBot:
             else:
                 update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
             time_to_sent = self.settings.run_time
-            #schedule.every().day.at(time_to_sent).do(self.job, context)
-            schedule.every(5).minutes.do(self.job, context)
+            schedule.every().day.at(time_to_sent).do(self.job, context)            
         else:
             self.logger.info(f"Неавторизованный пользователь: {update.effective_user.id}")
             update.message.reply_text('У вас нет доступа к этому боту.', quote=True)

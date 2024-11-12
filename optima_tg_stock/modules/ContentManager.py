@@ -28,8 +28,7 @@ class ContentManager:
                 stock_product = ''
                 if stock == 0:
                     stock_product = f'{product} закончился'
-                elif self.check_stock(self.min_stock_quantity, stock):
-                    #stock_product = f'\033[31mВНИМАНИЕ!\033[0m {product}: осталось *{stock}* шт.'
+                elif self.check_stock(self.min_stock_quantity, stock):                    
                     stock_product = f'{product}: осталось *{stock}* шт.'
                 elif flag != 'alert':
                     stock_product = f'{product}: {stock} шт.'
