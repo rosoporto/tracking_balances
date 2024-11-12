@@ -33,6 +33,7 @@ class TelegramBot:
             self.logger.info(f"Бот для юзера @{user} запущен")
 
             self.auth_user = True
+            self.logger.info(f"Установлен статус {self.auth_user} для отправки сообщиний")
             keyboard = [[InlineKeyboardButton('Stop', callback_data='stop')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if update.callback_query:
@@ -40,7 +41,8 @@ class TelegramBot:
             else:
                 update.message.reply_text('Бот запущен!', reply_markup=reply_markup, quote=True)
             time_to_sent = self.settings.run_time
-            schedule.every().day.at(time_to_sent).do(self.job, context)
+            #schedule.every().day.at(time_to_sent).do(self.job, context)
+            schedule.every(5).minutes.do(self.job, context)
         else:
             self.logger.info(f"Неавторизованный пользователь: {update.effective_user.id}")
             update.message.reply_text('У вас нет доступа к этому боту.', quote=True)
@@ -80,6 +82,7 @@ class TelegramBot:
         if self.auth_user:
             self.logger.info("Процесс сбора данных начался")
             message = self.content_manager.create_answer()
+            self.logger.info(f"Созданное сообщение: {message}")
 
             if message is None:
                 # Если товаров достаточно, отправляем сообщение пользователю
@@ -110,6 +113,7 @@ class TelegramBot:
                     self.logger.error("Ошибка отправки сообщения пользователю %s: %s", user_id, e)
 
     def job(self, context):
+        self.logger.info("Запуск задачи по отправке сообщений")
         now = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
         days_off = self.settings.days_off
         if days_off:
